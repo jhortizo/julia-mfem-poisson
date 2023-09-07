@@ -4,7 +4,7 @@ using SparseArrays
 
 filepath = "data/"
 
-coords = readdlm(filepath * "coordinates.dat", ' ', Float64, '\n');
+coordinate = readdlm(filepath * "coordinate.dat", ' ', Float64, '\n');
 element = readdlm(filepath * "element.dat", ' ', Int, '\n');
 dirichlet = readdlm(filepath * "dirichlet.dat", ' ', Int, '\n');
 
@@ -27,7 +27,7 @@ for m = axes(element, 1)
         end_node = element[m, k%3+1]
         p = nodes2edge[initial_node, end_node]
         if edge2element[p, 1] == 0
-            edge2element[p, :] = [initial_node end_node nodes2element[initial_node, end_note] nodes2element[end_node, initial_node]]
+            edge2element[p, :] = [initial_node end_node nodes2element[initial_node, end_node] nodes2element[end_node, initial_node]]
         end
     end
 end
