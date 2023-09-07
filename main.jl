@@ -39,4 +39,17 @@ function stimaB(coord)
     C * N' * M * N * C / (24 * det([1, 1, 1; coord]))
 end 
 
+B = sparse(noedges, noedges)
+C = sparse(noedges, size(element, 1))
+for j=axes(element, 1)
+    coord = coordinate(element[j, :], :)'
+    rows = diag(nodes2edge[element[j, [2 3 1]], element[j, [3 1 2]]])
+    signum = ones(1, 3)
+    signum[findall(j .== edge2element[rows, 4])] = -1
+    n = coord[:, [3 1 2]] - coord[:, [2 3 1]]
+    B[rows, rows] .+= diag(signum) * stimaB(coord) * diag(signum)
+    C[rows, j] = diag(signum) * [norm(n[:, 1]) norm(n[:, 2]) norm(n[:, 3])]'
+end
 
+A = sparse(noedges + size(element, 1), noedges + size(element, 1))
+A = [B C; C' sparse(size(element, 1), size(element, 1))]
