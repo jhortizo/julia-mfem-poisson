@@ -4,6 +4,29 @@ using SparseArrays
 
 filepath = "data/"
 
+function f(x)
+    zeros(size(x, 1), 1)
+end
+
+function g(x, n)
+    a = angle((x[:, 1] + x[:, 2] * i) * (-1 - i) / sqrt(2)) + pi * 3 / 4
+    r = sqrt(x[:, 1] .^ 2 + x[:, 2] .^ 2)
+    (2 / 3 * r .^ (-1 / 3) .* [-sin(a / 3), cos(a / 3)]) * n'
+end
+
+function u_D(x)
+    zeros(size(x,1),1)
+end
+
+function stimaB(coord)
+    N = coord[:] * ones(1, 3) - repmat(coord, 3, 1)
+    C = diag([norm(N[5, 6], 2), norm(N[1, 2], 3), norm(N[1, 2], 2)])
+    M = spdiags([ones(6, 1), ones(6, 1), 2 * ones(6, 1), ones(6, 1)], [-4, -2, 0, 2, 4], 6, 6)
+    C * N' * M * N * C / (24 * det([1, 1, 1; coord]))
+end
+
+
+
 coordinate = readdlm(filepath * "coordinate.dat", ' ', Float64, '\n');
 element = readdlm(filepath * "element.dat", ' ', Int, '\n');
 dirichlet = readdlm(filepath * "dirichlet.dat", ' ', Int, '\n');
@@ -32,16 +55,10 @@ for m = axes(element, 1)
     end
 end
 
-function stimaB(coord)
-    N = coord[:] * ones(1, 3) - repmat(coord, 3, 1)
-    C = diag([norm(N[5,6], 2), norm(N[1, 2], 3), norm(N[1, 2], 2)])
-    M = spdiags([ones(6,1), ones(6,1), 2 * ones(6,1), ones(6,1)], [-4,-2,0, 2, 4], 6, 6)
-    C * N' * M * N * C / (24 * det([1, 1, 1; coord]))
-end 
 
 B = sparse(noedges, noedges)
 C = sparse(noedges, size(element, 1))
-for j=axes(element, 1)
+for j = axes(element, 1)
     coord = coordinate(element[j, :], :)'
     rows = diag(nodes2edge[element[j, [2 3 1]], element[j, [3 1 2]]])
     signum = ones(1, 3)
@@ -53,3 +70,4 @@ end
 
 A = sparse(noedges + size(element, 1), noedges + size(element, 1))
 A = [B C; C' sparse(size(element, 1), size(element, 1))]
+
