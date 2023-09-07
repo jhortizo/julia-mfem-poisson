@@ -15,7 +15,7 @@ function g(x, n)
 end
 
 function u_D(x)
-    zeros(size(x,1),1)
+    zeros(size(x, 1), 1)
 end
 
 function stimaB(coord)
@@ -71,3 +71,12 @@ end
 A = sparse(noedges + size(element, 1), noedges + size(element, 1))
 A = [B C; C' sparse(size(element, 1), size(element, 1))]
 
+
+b = zeros(noedges + size(element, 1), 1)
+for l = axes(element, 1)
+    b[noedges+l] = -det([1, 1, 1; coordinate[element[l, :], :]']) * f(sum(coordinate[element[j, :], :]) / 3) / 6
+end
+
+for k = axes(dirichlet, 1)
+    b[nodes2edge[dirichlet[k, 1], dirichlet[k, 2]]] = norm(coordinate[dirichlet[k, 1], :] - coordinate[dirichlet[k, 2], :]) * u_D(sum(coordinate[dirichlet[k, :], :]) / 2)
+end
