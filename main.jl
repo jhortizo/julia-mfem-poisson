@@ -7,7 +7,7 @@ using .UserFunctions
 
 filepath = "data/section3.1/"
 
-f = fcn_zeros
+f = fcn_ones
 u_D = fcn_zeros
 
 
