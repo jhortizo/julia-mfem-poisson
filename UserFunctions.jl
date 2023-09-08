@@ -1,6 +1,6 @@
 module UserFunctions
 
-export fcn_zeros, g_91
+export fcn_zeros, fcn_ones, g_91
 
 function fcn_zeros(x)
     zeros(size(x, 1), 1)
