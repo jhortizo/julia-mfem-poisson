@@ -1,22 +1,15 @@
+include("UserFunctions.jl")
+
 using DelimitedFiles
 using LinearAlgebra
 using SparseArrays
+using .UserFunctions
 
-filepath = "data/"
+filepath = "data/section3.1/"
 
-function f(x)
-    zeros(size(x, 1), 1)
-end
+f = fcn_zeros
+u_D = fcn_zeros
 
-function g(x, n)
-    a = angle((x[:, 1] + x[:, 2] * i) * (-1 - i) / sqrt(2)) + pi * 3 / 4
-    r = sqrt(x[:, 1] .^ 2 + x[:, 2] .^ 2)
-    (2 / 3 * r .^ (-1 / 3) .* [-sin(a / 3), cos(a / 3)]) * n'
-end
-
-function u_D(x)
-    zeros(size(x, 1), 1)
-end
 
 function stimaB(coord)
     N = coord[:] * ones(1, 3) - repeat(coord, 3, 1)
@@ -86,4 +79,6 @@ for k = axes(dirichlet, 1)
     b[this_edge] = norm(coordinate[this_diri[1], :] - coordinate[this_diri[2], :]) * u_D(sum(coordinate[this_diri, :]) / 2)[1]
 end
 
-x = A \ b   
+x = A \ b
+
+writedlm(filepath * "u.dat", x, ' ')
