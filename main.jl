@@ -19,10 +19,10 @@ function u_D(x)
 end
 
 function stimaB(coord)
-    N = coord[:] * ones(1, 3) - repmat(coord, 3, 1)
-    C = diag([norm(N[5, 6], 2), norm(N[1, 2], 3), norm(N[1, 2], 2)])
-    M = spdiags([ones(6, 1), ones(6, 1), 2 * ones(6, 1), ones(6, 1)], [-4, -2, 0, 2, 4], 6, 6)
-    C * N' * M * N * C / (24 * det([1, 1, 1; coord]))
+    N = coord[:] * ones(1, 3) - repeat(coord, 3, 1)
+    C = diagm([norm(N[[5, 6], 2]), norm(N[[1, 2], 3]), norm(N[[1, 2], 2])])
+    M = spdiagm(-4 => ones(2), -2 => ones(4), 0 => 2 * ones(6), 2 => ones(4), 4 => ones(2))
+    C * N' * M * N * C / (24 * det([[1, 1, 1] coord]))
 end
 
 
@@ -56,20 +56,22 @@ for m = axes(element, 1)
 end
 
 
-B = sparse(noedges, noedges)
-C = sparse(noedges, size(element, 1))
+B = spzeros(noedges, noedges)
+C = spzeros(noedges, size(element, 1))
 for j = axes(element, 1)
-    coord = coordinate(element[j, :], :)'
-    rows = diag(nodes2edge[element[j, [2 3 1]], element[j, [3 1 2]]])
+    coord = coordinate[element[j, :], :]'
+    dummy = nodes2edge[element[j, [2 3 1]], element[j, [3 1 2]]]
+    dummy = dropdims(dummy, dims=Dims(findall(size(dummy) .== 1)))
+    local rows = diag(dummy)
     signum = ones(1, 3)
-    signum[findall(j .== edge2element[rows, 4])] = -1
+    signum[findall(j .== edge2element[rows, 4])] .= -1
     n = coord[:, [3 1 2]] - coord[:, [2 3 1]]
     B[rows, rows] .+= diag(signum) * stimaB(coord) * diag(signum)
     C[rows, j] = diag(signum) * [norm(n[:, 1]) norm(n[:, 2]) norm(n[:, 3])]'
 end
 
-A = sparse(noedges + size(element, 1), noedges + size(element, 1))
-A = [B C; C' sparse(size(element, 1), size(element, 1))]
+A = spzeros(noedges + size(element, 1), noedges + size(element, 1))
+A = [B C; C' spzeros(size(element, 1), size(element, 1))]
 
 
 b = zeros(noedges + size(element, 1), 1)
@@ -80,3 +82,5 @@ end
 for k = axes(dirichlet, 1)
     b[nodes2edge[dirichlet[k, 1], dirichlet[k, 2]]] = norm(coordinate[dirichlet[k, 1], :] - coordinate[dirichlet[k, 2], :]) * u_D(sum(coordinate[dirichlet[k, :], :]) / 2)
 end
+
+x = A \ b
