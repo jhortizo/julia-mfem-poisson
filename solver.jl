@@ -81,4 +81,4 @@ end
 
 x = A \ b
 
-writedlm(filepath * "u.dat", x, ' ')
+writedlm(filepath * "solution.dat", x, ' ')
