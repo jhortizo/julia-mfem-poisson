@@ -18,11 +18,23 @@ function stimaB(coord)
     C * N' * M * N * C / (24 * det([[1 1 1]; coord]))
 end
 
+function read_file(filepath, filename, is_mandatory=True)
 
+    if isfile(filepath * filename)
+        return readdlm(filepath * filename, ' ', Int, '\n')
+    else
+        if is_mandatory
+            error("File $filename not found in $filepath")
+        else
+            return []
+        end
+    end
+end
 
-coordinate = readdlm(filepath * "coordinate.dat", ' ', Float64, '\n');
-element = readdlm(filepath * "element.dat", ' ', Int, '\n');
-dirichlet = readdlm(filepath * "dirichlet.dat", ' ', Int, '\n');
+coordinate = read_file(filepath, "coordinate.dat")
+element = read_file(filepath, "element.dat")
+dirichlet = read_file(filepath, "dirichlet.dat", false)
+neumann = read_file(filepath, "neumann.dat", false)
 
 nodes2element = spzeros(size(coordinate, 1), size(coordinate, 1))
 for j = axes(element, 1)
@@ -78,6 +90,9 @@ for k = axes(dirichlet, 1)
     this_edge = nodes2edge[this_diri[1], this_diri[2]]
     b[this_edge] = norm(coordinate[this_diri[1], :] - coordinate[this_diri[2], :]) * u_D(sum(coordinate[this_diri, :]) / 2)[1]
 end
+
+# Neumann Condition
+
 
 x = A \ b
 
