@@ -35,6 +35,7 @@ coordinate = read_file(filepath, "coordinate.dat")
 element = read_file(filepath, "element.dat")
 dirichlet = read_file(filepath, "dirichlet.dat", false)
 neumann = read_file(filepath, "neumann.dat", false)
+# TODO: Handle case where no border condition is defined
 
 nodes2element = spzeros(size(coordinate, 1), size(coordinate, 1))
 for j = axes(element, 1)
@@ -85,6 +86,7 @@ for l = axes(element, 1)
     b[noedges+l] = -det([[1 1 1]; coord']) * f(sum(coord) / 3)[1] / 6
 end
 
+# TODO: Handle case where no Dirichlet condition
 for k = axes(dirichlet, 1)
     this_diri = dirichlet[k, :]
     this_edge = nodes2edge[this_diri[1], this_diri[2]]
@@ -92,8 +94,21 @@ for k = axes(dirichlet, 1)
 end
 
 # Neumann Condition
+if !isempty(neumann)
+    tmp = zeros(noedges + size(element, 1), 1)
+    tmp[diag(nodes2edge[neumann[:, 1], neumann[:, 2]])] = ones(size(diag(nodes2edge[neumann[:, 1], neumann[:, 2]]), 1), 1)
+    FreeEdge = findall(iszero, ~tmp)
+    x = zeros(noedges + size(element, 1), 1)
+    CN = coordinate[neumann[:, 2], :] - coordinate[neumann[:, 1], :]
+    for j = axes(neumann, 1)
+        x[nodes2edge[neumann[j, 1], neumann[j, 2]]] = g[sum(coordinate[neumann[j, :], :])/2, CN[j, :]*[0, -1; 1, 0]/norm(CN[j, :])]
+    end
+    b = b - A * x
+    x[FreeEdge] = A[FreeEdge, FreeEdge] \ b[FreeEdge]
 
+else
+    x = A \ b
+end
 
-x = A \ b
 
 writedlm(filepath * "solution.dat", x, ' ')
