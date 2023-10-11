@@ -5,10 +5,11 @@ using LinearAlgebra
 using SparseArrays
 using .UserFunctions
 
-filepath = "data/section3.1/"
+filepath = "data/section9.1/"
 
-f = fcn_ones
+f = fcn_zeros
 u_D = fcn_zeros
+g = g_91
 
 
 function stimaB(coord)
@@ -18,10 +19,10 @@ function stimaB(coord)
     C * N' * M * N * C / (24 * det([[1 1 1]; coord]))
 end
 
-function read_file(filepath, filename, is_mandatory=True)
+function read_file(filepath, filename, is_mandatory=true, vartype=Int)
 
     if isfile(filepath * filename)
-        return readdlm(filepath * filename, ' ', Int, '\n')
+        return readdlm(filepath * filename, ' ', vartype, '\n')
     else
         if is_mandatory
             error("File $filename not found in $filepath")
@@ -31,7 +32,7 @@ function read_file(filepath, filename, is_mandatory=True)
     end
 end
 
-coordinate = read_file(filepath, "coordinate.dat")
+coordinate = read_file(filepath, "coordinate.dat", true, Float64)
 element = read_file(filepath, "element.dat")
 dirichlet = read_file(filepath, "dirichlet.dat", false)
 neumann = read_file(filepath, "neumann.dat", false)
@@ -97,11 +98,11 @@ end
 if !isempty(neumann)
     tmp = zeros(noedges + size(element, 1), 1)
     tmp[diag(nodes2edge[neumann[:, 1], neumann[:, 2]])] = ones(size(diag(nodes2edge[neumann[:, 1], neumann[:, 2]]), 1), 1)
-    FreeEdge = findall(iszero, ~tmp)
+    FreeEdge = findall(iszero, tmp .== 0)
     x = zeros(noedges + size(element, 1), 1)
     CN = coordinate[neumann[:, 2], :] - coordinate[neumann[:, 1], :]
     for j = axes(neumann, 1)
-        x[nodes2edge[neumann[j, 1], neumann[j, 2]]] = g[sum(coordinate[neumann[j, :], :])/2, CN[j, :]*[0, -1; 1, 0]/norm(CN[j, :])]
+        x[nodes2edge[neumann[j, 1], neumann[j, 2]]] = g(sum(coordinate[neumann[j, :], :], dims=1)/2, CN[j, :]'*[0 -1; 1 0]/norm(CN[j, :]))
     end
     b = b - A * x
     x[FreeEdge] = A[FreeEdge, FreeEdge] \ b[FreeEdge]
