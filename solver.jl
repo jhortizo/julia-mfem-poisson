@@ -1,9 +1,11 @@
 include("UserFunctions.jl")
+include("PlotFields.jl")
 
 using DelimitedFiles
 using LinearAlgebra
 using SparseArrays
 using .UserFunctions
+using .PlotFields
 
 example = "9.1"
 
@@ -120,5 +122,9 @@ else
     x = A \ b
 end
 
-
 writedlm(filepath * "solution.dat", x, ' ')
+
+# Plotting
+u = x[end-size(element, 1)+1:end, 1] # elementwise displacement
+displacement_field(coordinate, element, u)
+
