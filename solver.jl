@@ -5,11 +5,19 @@ using LinearAlgebra
 using SparseArrays
 using .UserFunctions
 
-filepath = "data/section9.1/"
+example = "9.1"
 
-f = fcn_zeros
-u_D = fcn_zeros
-g = g_91
+if example == "9.1"
+    filepath = "data/section9.1/"
+    f = fcn_zeros
+    u_D = fcn_zeros
+    g = g_91
+elseif example == "3.1"
+    filepath = "data/section3.1/"
+    f = fcn_ones
+    u_D = fcn_zeros
+    g = fcn_zeros
+end
 
 
 function stimaB(coord)
@@ -80,7 +88,7 @@ end
 A = spzeros(noedges + size(element, 1), noedges + size(element, 1))
 A = [B C; C' spzeros(size(element, 1), size(element, 1))]
 
-
+# Volume forces
 b = zeros(noedges + size(element, 1), 1)
 for l = axes(element, 1)
     coord = coordinate[element[l, :], :]
@@ -98,14 +106,15 @@ end
 if !isempty(neumann)
     tmp = zeros(noedges + size(element, 1), 1)
     tmp[diag(nodes2edge[neumann[:, 1], neumann[:, 2]])] = ones(size(diag(nodes2edge[neumann[:, 1], neumann[:, 2]]), 1), 1)
-    FreeEdge = findall(iszero, tmp .== 0)
+    FreeEdge = findall(iszero, tmp)
+    FreeRows = [i[1] for i in FreeEdge]
     x = zeros(noedges + size(element, 1), 1)
     CN = coordinate[neumann[:, 2], :] - coordinate[neumann[:, 1], :]
     for j = axes(neumann, 1)
-        x[nodes2edge[neumann[j, 1], neumann[j, 2]]] = g(sum(coordinate[neumann[j, :], :], dims=1)/2, CN[j, :]'*[0 -1; 1 0]/norm(CN[j, :]))
+        x[nodes2edge[neumann[j, 1], neumann[j, 2]]] = g(sum(coordinate[neumann[j, :], :], dims=1) / 2, CN[j, :]' * [0 -1; 1 0] / norm(CN[j, :]))
     end
     b = b - A * x
-    x[FreeEdge] = A[FreeEdge, FreeEdge] \ b[FreeEdge]
+    x[FreeRows] = A[FreeRows, FreeRows] \ b[FreeRows]
 
 else
     x = A \ b
