@@ -79,7 +79,7 @@ for j = axes(element, 1)
     local coord = coordinate[element[j, :], :]'
     dummy = nodes2edge[element[j, [2 3 1]], element[j, [3 1 2]]]
     dummy = dropdims(dummy, dims=Dims(findall(size(dummy) .== 1)))
-    rows = diag(dummy)
+    local rows = diag(dummy)
     signum = ones(1, 3)
     signum[findall(j .== edge2element[rows, 4])] .= -1
     n = coord[:, [3 1 2]][:, 1, :] - coord[:, [2 3 1]][:, 1, :]
@@ -124,7 +124,25 @@ end
 
 writedlm(filepath * "solution.dat", x, ' ')
 
-# Plotting
-u = x[end-size(element, 1)+1:end, 1] # elementwise displacement
-displacement_field(coordinate, element, u)
+# Calculate fields
+u = x[end-size(element, 1)+1:end, 1] # elementwise displacement field
 
+p = zeros(3 * size(element, 1), 2);
+for j = axes(element, 1)
+    signum = ones(1, 3)
+    dummy = diag(nodes2edge[element[j, [2 3 1]][:], element[j, [3 1 2]][:]])
+    condition = j .== edge2element[dummy, 4]
+    signum[findall(!iszero, condition)] .= -1
+    c = coordinate[element[j, [2 3 1]][:], :] - coordinate[element[j, [3 1 2]][:], :]
+    n = [norm(c[1, :]), norm(c[2, :]), norm(c[3, :])]
+    coord = coordinate[element[j, :], :]'
+    N = coord[:] * ones(1, 3) - repeat(coord, 3, 1)
+    pc = reshape(N * diagm(vec(signum)) * diagm(n) * x[dummy]det([1 1 1; coordinate[element[j, :], :]']), 2, 3)
+    p[3*(j-1).+[1, 2, 3], :] = [pc[1, :] pc[2, :]]
+end
+
+
+# plotting
+displacement_field(coordinate, element, u, filepath)
+flux_fields(coordinate, element, p, filepath)
+show()
