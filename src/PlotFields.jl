@@ -2,8 +2,10 @@ module PlotFields
 export displacement_field, flux_fields
 
 using DelimitedFiles
+using PyCall
 using PyPlot
-pygui(true)
+matplotlib = pyimport("matplotlib")
+matplotlib.use("Agg")
 
 function displacement_field(coordinate, element, u, filepath=nothing)
     fig = figure()

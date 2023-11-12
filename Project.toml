@@ -1,4 +1,4 @@
-name = "julia-mfem-poisson"
+name = "MfemPoisson"
 uuid = "bc8780ef-15ca-4831-9da4-f4e3ff2295e3"
 authors = ["José Ortiz-Ocampo <joseortiz1807@gmail.com>"]
 version = "0.1.0"
@@ -6,5 +6,6 @@ version = "0.1.0"
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"

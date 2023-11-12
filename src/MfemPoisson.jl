@@ -1,16 +1,17 @@
 module MfemPoisson
 export main
 
+include("UserFunctions.jl")
+include("PlotFields.jl")
+
+using DelimitedFiles
+using LinearAlgebra
+using SparseArrays
+using .UserFunctions
+using .PlotFields
+
 function main()
 
-    include("UserFunctions.jl")
-    include("PlotFields.jl")
-
-    using DelimitedFiles
-    using LinearAlgebra
-    using SparseArrays
-    using .UserFunctions
-    using .PlotFields
 
     example = "9.1"
 
