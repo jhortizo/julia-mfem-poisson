@@ -1,0 +1,4 @@
+import MfemPoisson
+
+MfemPoisson.main()
+
