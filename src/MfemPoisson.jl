@@ -53,7 +53,7 @@ function main()
     # TODO: Handle case where no border condition is defined
 
     nodes2element = spzeros(size(coordinate, 1), size(coordinate, 1))
-    for j = axes(element, 1)
+    for j in axes(element, 1)
         nodes2element[element[j, :], element[j, [2, 3, 1]]] .+= j .* Matrix(1I, 3, 3)
     end
 
@@ -65,8 +65,8 @@ function main()
 
     noedges = size(rows, 1)
     edge2element = zeros(noedges, 4)
-    for m = axes(element, 1)
-        for k = 1:3
+    for m in axes(element, 1)
+        for k in 1:3
             initial_node = element[m, k]
             end_node = element[m, k%3+1]
             p = nodes2edge[initial_node, end_node]
@@ -79,7 +79,7 @@ function main()
 
     B = spzeros(noedges, noedges)
     C = spzeros(noedges, size(element, 1))
-    for j = axes(element, 1)
+    for j in axes(element, 1)
         local coord = coordinate[element[j, :], :]'
         dummy = nodes2edge[element[j, [2 3 1]], element[j, [3 1 2]]]
         dummy = dropdims(dummy, dims=Dims(findall(size(dummy) .== 1)))
@@ -96,13 +96,13 @@ function main()
 
     # Volume forces
     b = zeros(noedges + size(element, 1), 1)
-    for l = axes(element, 1)
+    for l in axes(element, 1)
         coord = coordinate[element[l, :], :]
         b[noedges+l] = -det([[1 1 1]; coord']) * f(sum(coord) / 3)[1] / 6
     end
 
     # TODO: Handle case where no Dirichlet condition
-    for k = axes(dirichlet, 1)
+    for k in axes(dirichlet, 1)
         this_diri = dirichlet[k, :]
         this_edge = nodes2edge[this_diri[1], this_diri[2]]
         b[this_edge] = norm(coordinate[this_diri[1], :] - coordinate[this_diri[2], :]) * u_D(sum(coordinate[this_diri, :]) / 2)[1]
@@ -116,7 +116,7 @@ function main()
         FreeRows = [i[1] for i in FreeEdge]
         x = zeros(noedges + size(element, 1), 1)
         CN = coordinate[neumann[:, 2], :] - coordinate[neumann[:, 1], :]
-        for j = axes(neumann, 1)
+        for j in axes(neumann, 1)
             x[nodes2edge[neumann[j, 1], neumann[j, 2]]] = g(sum(coordinate[neumann[j, :], :], dims=1) / 2, CN[j, :]' * [0 -1; 1 0] / norm(CN[j, :]))
         end
         b = b - A * x
@@ -132,7 +132,7 @@ function main()
     u = x[end-size(element, 1)+1:end, 1] # elementwise displacement field
 
     p = zeros(3 * size(element, 1), 2)
-    for j = axes(element, 1)
+    for j in axes(element, 1)
         signum = ones(1, 3)
         dummy = diag(nodes2edge[element[j, [2 3 1]][:], element[j, [3 1 2]][:]])
         condition = j .== edge2element[dummy, 4]
