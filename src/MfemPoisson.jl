@@ -125,7 +125,7 @@ function calculate_constants_vector(coordinate, element, nodes2edge, noedges, f,
     return b
 end
 
-function solve_system(A, b, neumann, g, noedges)
+function solve_system(A, b, neumann, coordinate, element, g, noedges, nodes2edge)
 
     if !isempty(neumann)
         # Add Neumann conditions
@@ -187,7 +187,7 @@ function main(example::String)
     A = assemble_global_stiffness_matrix(coordinate, element, nodes2edge, edge2element, noedges)
     b = calculate_constants_vector(coordinate, element, nodes2edge, noedges, f, u_D, dirichlet)
 
-    x = solve_system(A, b, neumann, g, noedges)
+    x = solve_system(A, b, neumann, coordinate, element, g, noedges, nodes2edge)
     u, p = calculate_fields(coordinate, element, nodes2edge, edge2element, x)
 
     plot_and_save(coordinate, element, x, u, p, filepath)

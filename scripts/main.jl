@@ -1,3 +1,3 @@
 import MfemPoisson
 
-MfemPoisson.main()
+MfemPoisson.main("9.1")
