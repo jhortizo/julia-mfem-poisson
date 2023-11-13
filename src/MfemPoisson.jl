@@ -10,7 +10,7 @@ using SparseArrays
 using .UserFunctions
 using .PlotFields
 
-function stimaB(coord)
+function calculate_local_stiffness_matrix(coord)
     N = coord[:] * ones(1, 3) - repeat(coord, 3, 1)
     C = diagm([norm(N[[5, 6], 2]), norm(N[[1, 2], 3]), norm(N[[1, 2], 2])])
     M = spdiagm(-4 => ones(2), -2 => ones(4), 0 => 2 * ones(6), 2 => ones(4), 4 => ones(2))
@@ -30,9 +30,7 @@ function read_file(filepath, filename, is_mandatory=true, vartype=Int)
     end
 end
 
-function main()
-
-    example = "9.1"
+function load_from_examplename(example::String)
 
     if example == "9.1"
         filepath = "data/section9.1/"
@@ -50,8 +48,13 @@ function main()
     element = read_file(filepath, "element.dat")
     dirichlet = read_file(filepath, "dirichlet.dat", false)
     neumann = read_file(filepath, "neumann.dat", false)
-    # TODO: Handle case where no border condition is defined
 
+    return coordinate, element, dirichlet, neumann, f, u_D, g, filepath
+
+end
+
+function build_aux_structures(coordinate, element)
+    # calculate matrices nodes2element, nodes2edge and edge2element and number of edges (noedges)
     nodes2element = spzeros(size(coordinate, 1), size(coordinate, 1))
     for j in axes(element, 1)
         nodes2element[element[j, :], element[j, [2, 3, 1]]] .+= j .* Matrix(1I, 3, 3)
@@ -76,7 +79,10 @@ function main()
         end
     end
 
+    return nodes2element, nodes2edge, edge2element, noedges
+end
 
+function assemble_global_stiffness_matrix(coordinate, element, nodes2edge, edge2element, noedges)
     B = spzeros(noedges, noedges)
     C = spzeros(noedges, size(element, 1))
     for j in axes(element, 1)
@@ -87,20 +93,28 @@ function main()
         signum = ones(1, 3)
         signum[findall(j .== edge2element[rows, 4])] .= -1
         n = coord[:, [3 1 2]][:, 1, :] - coord[:, [2 3 1]][:, 1, :]
-        B[rows, rows] .+= diagm(signum[:]) * stimaB(coord) * diagm(signum[:])
+        B_local = calculate_local_stiffness_matrix(coord)
+        B[rows, rows] .+= diagm(signum[:]) * B_local * diagm(signum[:])
         C[rows, j] = diagm(signum[:]) * [norm(n[:, 1]) norm(n[:, 2]) norm(n[:, 3])]'
     end
 
     A = spzeros(noedges + size(element, 1), noedges + size(element, 1))
     A = [B C; C' spzeros(size(element, 1), size(element, 1))]
 
-    # Volume forces
+    return A
+
+end
+
+function calculate_constants_vector(coordinate, element, nodes2edge, noedges, f, u_D, dirichlet)
+
+    # Add volume forces
     b = zeros(noedges + size(element, 1), 1)
     for l in axes(element, 1)
         coord = coordinate[element[l, :], :]
         b[noedges+l] = -det([[1 1 1]; coord']) * f(sum(coord) / 3)[1] / 6
     end
 
+    # Add Dirichlet condition
     # TODO: Handle case where no Dirichlet condition
     for k in axes(dirichlet, 1)
         this_diri = dirichlet[k, :]
@@ -108,8 +122,13 @@ function main()
         b[this_edge] = norm(coordinate[this_diri[1], :] - coordinate[this_diri[2], :]) * u_D(sum(coordinate[this_diri, :]) / 2)[1]
     end
 
-    # Neumann Condition
+    return b
+end
+
+function solve_system(A, b, neumann, g, noedges)
+
     if !isempty(neumann)
+        # Add Neumann conditions
         tmp = zeros(noedges + size(element, 1), 1)
         tmp[diag(nodes2edge[neumann[:, 1], neumann[:, 2]])] = ones(size(diag(nodes2edge[neumann[:, 1], neumann[:, 2]]), 1), 1)
         FreeEdge = findall(iszero, tmp)
@@ -120,15 +139,18 @@ function main()
             x[nodes2edge[neumann[j, 1], neumann[j, 2]]] = g(sum(coordinate[neumann[j, :], :], dims=1) / 2, CN[j, :]' * [0 -1; 1 0] / norm(CN[j, :]))
         end
         b = b - A * x
+        # Solve for unrestricted edges
         x[FreeRows] = A[FreeRows, FreeRows] \ b[FreeRows]
-
     else
+        # Solve in case no Neumann condition is defined
         x = A \ b
     end
+    return x
+end
 
-    writedlm(filepath * "solution.dat", x, ' ')
 
-    # Calculate fields
+function calculate_fields(coordinate, element, nodes2edge, edge2element, x)
+    # Calculate displacement field u and flux field p based on solution vector x
     u = x[end-size(element, 1)+1:end, 1] # elementwise displacement field
 
     p = zeros(3 * size(element, 1), 2)
@@ -145,14 +167,30 @@ function main()
         p[3*(j-1).+[1, 2, 3], :] = [pc[1, :] pc[2, :]]
     end
 
+    return u, p
+end
 
-    # plotting
+function plot_and_save(coordinate, element, x, u, p, filepath)
+    # plotting and saving
+    writedlm(filepath * "solution.dat", x, ' ')
     displacement_field(coordinate, element, u, filepath)
     flux_fields(coordinate, element, p, filepath)
     show()
-
 end
 
+function main(example::String)
+    # TODO: Handle case where no border condition is defined
 
+    coordinate, element, dirichlet, neumann, f, u_D, g, filepath = load_from_examplename(example)
+    _, nodes2edge, edge2element, noedges = build_aux_structures(coordinate, element)
+
+    A = assemble_global_stiffness_matrix(coordinate, element, nodes2edge, edge2element, noedges)
+    b = calculate_constants_vector(coordinate, element, nodes2edge, noedges, f, u_D, dirichlet)
+
+    x = solve_system(A, b, neumann, g, noedges)
+    u, p = calculate_fields(coordinate, element, nodes2edge, edge2element, x)
+
+    plot_and_save(coordinate, element, x, u, p, filepath)
+end
 
 end
