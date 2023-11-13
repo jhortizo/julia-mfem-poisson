@@ -1,5 +1,5 @@
 module MfemPoisson
-export main
+export main, load_from_examplename, build_aux_structures, plot_and_save, calculate_fields
 
 include("UserFunctions.jl")
 include("PlotFields.jl")
@@ -170,9 +170,13 @@ function calculate_fields(coordinate, element, nodes2edge, edge2element, x)
     return u, p
 end
 
-function plot_and_save(coordinate, element, x, u, p, filepath)
-    # plotting and saving
-    writedlm(filepath * "solution.dat", x, ' ')
+function plot_and_save(coordinate, element, x, u, p, filepath=nothing)
+    # save solution vector
+    if !isnothing(filepath)
+        writedlm(filepath * "solution.dat", x, ' ')
+    end
+
+    # plot fields
     displacement_field(coordinate, element, u, filepath)
     flux_fields(coordinate, element, p, filepath)
     show()
