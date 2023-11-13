@@ -10,8 +10,27 @@ using SparseArrays
 using .UserFunctions
 using .PlotFields
 
-function main()
+function stimaB(coord)
+    N = coord[:] * ones(1, 3) - repeat(coord, 3, 1)
+    C = diagm([norm(N[[5, 6], 2]), norm(N[[1, 2], 3]), norm(N[[1, 2], 2])])
+    M = spdiagm(-4 => ones(2), -2 => ones(4), 0 => 2 * ones(6), 2 => ones(4), 4 => ones(2))
+    C * N' * M * N * C / (24 * det([[1 1 1]; coord]))
+end
 
+function read_file(filepath, filename, is_mandatory=true, vartype=Int)
+
+    if isfile(filepath * filename)
+        return readdlm(filepath * filename, ' ', vartype, '\n')
+    else
+        if is_mandatory
+            error("File $filename not found in $filepath")
+        else
+            return []
+        end
+    end
+end
+
+function main()
 
     example = "9.1"
 
@@ -27,27 +46,6 @@ function main()
         g = fcn_zeros
     end
 
-
-    function stimaB(coord)
-        N = coord[:] * ones(1, 3) - repeat(coord, 3, 1)
-        C = diagm([norm(N[[5, 6], 2]), norm(N[[1, 2], 3]), norm(N[[1, 2], 2])])
-        M = spdiagm(-4 => ones(2), -2 => ones(4), 0 => 2 * ones(6), 2 => ones(4), 4 => ones(2))
-        C * N' * M * N * C / (24 * det([[1 1 1]; coord]))
-    end
-
-    function read_file(filepath, filename, is_mandatory=true, vartype=Int)
-
-        if isfile(filepath * filename)
-            return readdlm(filepath * filename, ' ', vartype, '\n')
-        else
-            if is_mandatory
-                error("File $filename not found in $filepath")
-            else
-                return []
-            end
-        end
-    end
-
     coordinate = read_file(filepath, "coordinate.dat", true, Float64)
     element = read_file(filepath, "element.dat")
     dirichlet = read_file(filepath, "dirichlet.dat", false)
@@ -59,7 +57,7 @@ function main()
         nodes2element[element[j, :], element[j, [2, 3, 1]]] .+= j .* Matrix(1I, 3, 3)
     end
 
-    B = nodes2element + nodes2element';
+    B = nodes2element + nodes2element'
     indices = findall(!iszero, triu(B))
     rows, cols = [i[1] for i in indices], [i[2] for i in indices]
     nodes2edge = sparse(rows, cols, 1:size(rows, 1), size(coordinate, 1), size(coordinate, 1))
@@ -133,7 +131,7 @@ function main()
     # Calculate fields
     u = x[end-size(element, 1)+1:end, 1] # elementwise displacement field
 
-    p = zeros(3 * size(element, 1), 2);
+    p = zeros(3 * size(element, 1), 2)
     for j = axes(element, 1)
         signum = ones(1, 3)
         dummy = diag(nodes2edge[element[j, [2 3 1]][:], element[j, [3 1 2]][:]])
