@@ -1,5 +1,5 @@
 module MfemPoisson
-export run_exact_paper_example, load_from_examplename, build_aux_structures, plot_and_save, calculate_fields
+export run_exact_paper_example, load_from_examplename, build_aux_structures, plot_and_save, calculate_fields, create_triangulation, plot_triangulation
 
 
 include("PlotFields.jl")
