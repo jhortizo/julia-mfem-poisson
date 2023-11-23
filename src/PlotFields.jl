@@ -1,5 +1,5 @@
 module PlotFields
-export displacement_field, flux_fields
+export displacement_field, flux_fields, plot_and_save
 
 using DelimitedFiles
 using PyCall
@@ -71,6 +71,18 @@ function flux_fields(coordinate, element, p, filepath=nothing)
     if !isnothing(filepath)
         fig.savefig(filepath * "flux_fields.png")
     end
+end
+
+function plot_and_save(coordinate, element, x, u, p, filepath=nothing)
+    # save solution vector
+    if !isnothing(filepath)
+        writedlm(filepath * "solution.dat", x, ' ')
+    end
+
+    # plot fields
+    displacement_field(coordinate, element, u, filepath)
+    flux_fields(coordinate, element, p, filepath)
+    show()
 end
 
 end
