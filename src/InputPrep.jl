@@ -1,5 +1,5 @@
 module InputPrep
-export load_from_examplename, build_aux_structures, create_triangulation, plot_triangulation
+export load_from_examplename, build_aux_structures, create_triangulation, plot_triangulation, instantiate_refined_mesh_31
 
 include("UserFunctions.jl")
 
@@ -58,8 +58,9 @@ function create_triangulation(points)
 
     coordinate = (triout.pointlist)'
     element = (triout.trianglelist)'
+    borders = (triout.segmentlist)'
 
-    return coordinate, element
+    return coordinate, element, borders
 end
 
 function plot_triangulation(coordinate, element)
@@ -79,5 +80,23 @@ function plot_triangulation(coordinate, element)
     show()
 end
 
+function instantiate_refined_mesh_31(n_points::Int)
+
+    num_points = trunc(Int, sqrt(n_points))
+
+    x = LinRange(0, 1, num_points)
+    y = LinRange(0, 1, num_points)
+    points = hcat([[i, j] for i in x for j in y]...)
+    coordinate, element, dirichlet = create_triangulation(points)
+    neumann = []
+
+    filepath = nothing
+    f = fcn_ones
+    u_D = fcn_zeros
+    g = fcn_zeros
+
+    return coordinate, element, dirichlet, neumann, f, u_D, g, filepath
+
+end
 
 end

@@ -7,5 +7,5 @@ x = LinRange(0, side_length, num_points)
 y = LinRange(0, side_length, num_points)
 points = hcat([[i, j] for i in x for j in y]...)
 
-coordinate, element = MfemPoisson.create_triangulation(points)
+coordinate, element, _ = MfemPoisson.create_triangulation(points)
 MfemPoisson.plot_triangulation(coordinate, element)
